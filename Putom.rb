@@ -11,41 +11,46 @@ $putio_connection = Faraday.new('https://api.put.io/v2/') do |faraday|
   faraday.adapter Faraday.default_adapter
 end
 
-def create_entries(files,atom)
+def create_entries(files,feed)
   files.each do |file|
     if file["content_type"] == "application/x-directory"
       directory = $putio_connection.get do |req|
         req.url 'files/list'
         req.params['parent_id'] = file["id"]
       end
-      create_entries directory.body["files"],atom
+      create_entries directory.body["files"],feed
     else
+    	begin
         if file["content_type"] == "video/mp4"
           downurl = $putio_connection.get("files/#{file['id']}/download").headers["location"]
         else
           downurl = $putio_connection.get("files/#{file['id']}/mp4/download").headers["location"]
         end
-        atom.entry do
-          atom.title file['name']
-          atom.link	 downurl
+        feed.entry do
+          feed.title file['name']
+          feed.link	 downurl
         end
+      rescue Faraday::Error::ResourceNotFound
+      	next
+      end
     end
   end
-  return files,atom
+  return files,feed
 end
 
-def createFeed
-  atom = Builder::XmlMarkup.new(:target => STDOUT, :indent => 2)
+def createFeed(buffer,files)
+  atom = Builder::XmlMarkup.new(:target => buffer, :indent => 2)
   atom.instruct!
   atom.feed "xmlns" => "http://www.w3.org/2005/Atom" do
     atom.id "hurrdurr"																	#CHANGE ME IT HURTS!!!
     atom.updated Time.now.utc.iso8601(0)
     atom.title "Your Files", :type => "text"
     atom.link :rel => "self", :href => "/ruby_github.atom" #CHANGE ME IT HURTS!!!
+    create_entries files,atom
   end
-  return atom
+  return buffer
 end
-
-feed=createFeed
+buffer=""
 files = $putio_connection.get('files/list').body["files"]
-create_entries files,feed
+buffer=createFeed buffer,files
+File.open("atom", 'w') {|f| f.write(buffer) }
