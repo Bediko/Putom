@@ -20,7 +20,7 @@ def create_entries(files,feed)
       end
       create_entries directory.body["files"],feed
     else
-    	begin
+			begin
         if file["content_type"] == "video/mp4"
           downurl = $putio_connection.get("files/#{file['id']}/download").headers["location"]
         else
@@ -28,11 +28,11 @@ def create_entries(files,feed)
         end
         feed.entry do
           feed.title file['name']
-          feed.link	 downurl
-        end
+          feed.link	downurl
+        end  
       rescue Faraday::Error::ResourceNotFound
       	next
-      end
+			end
     end
   end
   return files,feed
