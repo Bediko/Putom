@@ -27,15 +27,15 @@ def create_entries(files,feed)
           downurl = $putio_connection.get("files/#{file['id']}/mp4/download").headers["location"]
         end
         feed.entry do
-        	feed.id downurl
+        	feed.id "urn:put-io:files:#{file['id']}"
           feed.title file['name']
           feed.link	href: downurl,rel:"alternate"
           feed.author {feed.name "Putover"}
           feed.content file['name']
-          feed.published Time.now.utc.iso8601(0)
-      		feed.updated Time.now.utc.iso8601(0)
+          feed.published "#{file['created_at']}Z"
+      		feed.updated "#{file['created_at']}Z"
         end  
-        sleep 1
+
       rescue Faraday::Error::ResourceNotFound
       	next
 			end
@@ -44,7 +44,7 @@ def create_entries(files,feed)
   return files,feed
 end
 
-def createFeed(buffer,files)
+def create_feed(buffer,files)
   atom = Builder::XmlMarkup.new(:target => buffer, :indent => 2)
   atom.instruct!
   atom.feed "xmlns" => "http://www.w3.org/2005/Atom" do
@@ -58,5 +58,5 @@ def createFeed(buffer,files)
 end
 buffer=""
 files = $putio_connection.get('files/list').body["files"]
-buffer=createFeed buffer,files
+buffer=create_feed buffer,files
 File.open("atom", 'w') {|f| f.write(buffer) }
