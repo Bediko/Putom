@@ -27,9 +27,15 @@ def create_entries(files,feed)
           downurl = $putio_connection.get("files/#{file['id']}/mp4/download").headers["location"]
         end
         feed.entry do
+        	feed.id downurl
           feed.title file['name']
-          feed.link	downurl
+          feed.link	href: downurl,rel:"alternate"
+          feed.author {feed.name "Putover"}
+          feed.content file['name']
+          feed.published Time.now.utc.iso8601(0)
+      		feed.updated Time.now.utc.iso8601(0)
         end  
+        sleep 1
       rescue Faraday::Error::ResourceNotFound
       	next
 			end
