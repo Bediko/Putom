@@ -20,25 +20,24 @@ def create_entries(files,feed)
       end
       create_entries directory.body["files"],feed
     else
-			begin
+      begin
         if file["content_type"] == "video/mp4"
           downurl = $putio_connection.get("files/#{file['id']}/download").headers["location"]
         else
           downurl = $putio_connection.get("files/#{file['id']}/mp4/download").headers["location"]
         end
         feed.entry do
-        	feed.id "urn:put-io:files:#{file['id']}"
+          feed.id "urn:put-io:files:#{file['id']}"
           feed.title file['name']
-          feed.link	href: downurl,rel:"alternate"
+          feed.link href: downurl,rel:"alternate"
           feed.author {feed.name "Putover"}
           feed.content file['name']
           feed.published "#{file['created_at']}Z"
-      		feed.updated "#{file['created_at']}Z"
-        end  
-
+          feed.updated "#{file['created_at']}Z"
+        end
       rescue Faraday::Error::ResourceNotFound
-      	next
-			end
+        next
+      end
     end
   end
   return files,feed
@@ -48,7 +47,7 @@ def create_feed(buffer,files)
   atom = Builder::XmlMarkup.new(:target => buffer, :indent => 2)
   atom.instruct!
   atom.feed "xmlns" => "http://www.w3.org/2005/Atom" do
-    atom.id "hurrdurr"																	#CHANGE ME IT HURTS!!!
+    atom.id "hurrdurr"                                  #CHANGE ME IT HURTS!!!
     atom.updated Time.now.utc.iso8601(0)
     atom.title "Your Files", :type => "text"
     atom.link :rel => "self", :href => "/ruby_github.atom" #CHANGE ME IT HURTS!!!
